@@ -140,7 +140,7 @@ Then, by default:
 ## Install
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **26.1.2** and put [Fabric API](https://modrinth.com/mod/fabric-api) in your `mods` folder.
-2. Get the jar: **[download lowball-helper-1.1.0.jar](https://github.com/skylerressi-eng/Lowballing-modd/raw/claude/confident-brahmagupta-7vat8h/download/lowball-helper-1.1.0.jar)**
+2. Get the jar: **[download the jar for your Minecraft version](https://github.com/skylerressi-eng/Lowballing-modd/raw/claude/confident-brahmagupta-7vat8h/download/)**
    - or from the **Actions** tab of this repo (latest *Build* run → *lowball-helper* artifact), or
    - by building it yourself: `./gradlew build` (needs JDK 25); the jar is in `build/libs/`.
 3. Put the jar in your `mods` folder and launch.
