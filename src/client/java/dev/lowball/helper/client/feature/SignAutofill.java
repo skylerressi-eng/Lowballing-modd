@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
 import net.minecraft.network.chat.Component;
 
-import dev.lowball.helper.client.mixin.AbstractSignEditScreenAccessor;
+import dev.lowball.helper.client.ScreenAccess;
 import dev.lowball.helper.config.LowballConfig;
 import dev.lowball.helper.util.Fmt;
 
@@ -52,19 +52,23 @@ public final class SignAutofill {
 		if (!(screen instanceof AbstractSignEditScreen) || !armed()) {
 			return;
 		}
-		AbstractSignEditScreenAccessor acc = (AbstractSignEditScreenAccessor) screen;
-		String[] lines = acc.lowball$messages();
-		StringBuilder hint = new StringBuilder();
-		for (int i = 1; i < lines.length; i++) {
-			hint.append(lines[i].toLowerCase(Locale.ROOT)).append(' ');
+		AbstractSignEditScreen sign = (AbstractSignEditScreen) screen;
+		String[] lines = ScreenAccess.signLines(sign);
+		if (lines != null) {
+			StringBuilder hint = new StringBuilder();
+			for (int i = 1; i < lines.length; i++) {
+				hint.append(lines[i].toLowerCase(Locale.ROOT)).append(' ');
+			}
+			String h = hint.toString();
+			// Hypixel input signs put "^^^^" under the input line and a prompt below it
+			if (!(h.contains("^^^") || h.contains("coin") || h.contains("amount"))) {
+				return;
+			}
+			if (!lines[0].isEmpty()) {
+				return;
+			}
 		}
-		String h = hint.toString();
-		// Hypixel input signs put "^^^^" under the input line and a prompt below it
-		if (!(h.contains("^^^") || h.contains("coin") || h.contains("amount"))) {
-			return;
-		}
-		acc.lowball$setLine(0);
-		acc.lowball$setMessage(Long.toString(armedAmount));
+		ScreenAccess.setFirstSignLine(sign, Long.toString(armedAmount));
 		armedAmount = -1;
 	}
 

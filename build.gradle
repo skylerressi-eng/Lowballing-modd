@@ -6,6 +6,9 @@ base {
 	archivesName = project.name
 }
 
+// jar is named per Minecraft version, e.g. lowball-helper-1.1.1+mc26.3.jar
+version = "${project.version}+mc${project.minecraft_version}"
+
 loom {
 	splitEnvironmentSourceSets()
 
@@ -47,10 +50,12 @@ test {
 
 processResources {
 	def version = project.version
+	def range = project.minecraft_range
 	inputs.property "version", version
+	inputs.property "minecraft_range", range
 
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand "version": version, "minecraft_range": range
 	}
 }
 

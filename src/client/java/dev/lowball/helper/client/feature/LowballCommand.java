@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
+import dev.lowball.helper.client.Compat;
 import dev.lowball.helper.client.Items;
 import dev.lowball.helper.client.LowballHelperClient;
 import dev.lowball.helper.client.ui.ConfigScreen;
@@ -88,7 +89,7 @@ public final class LowballCommand {
 						ctx.getSource().sendError(Component.literal("Hold a SkyBlock item to see its value breakdown"));
 						return 0;
 					}
-					LowballHelperClient.openNextTick(() -> Minecraft.getInstance().setScreen(new dev.lowball.helper.client.ui.ValueScreen(held)));
+					LowballHelperClient.openNextTick(() -> Compat.setScreen(new dev.lowball.helper.client.ui.ValueScreen(held)));
 					return 1;
 				}))
 				.then(literal("demo").executes(ctx -> {
@@ -99,7 +100,7 @@ public final class LowballCommand {
 	}
 
 	private static int openConfig() {
-		LowballHelperClient.openNextTick(() -> Minecraft.getInstance().setScreen(new ConfigScreen()));
+		LowballHelperClient.openNextTick(() -> Compat.setScreen(new ConfigScreen()));
 		return 1;
 	}
 

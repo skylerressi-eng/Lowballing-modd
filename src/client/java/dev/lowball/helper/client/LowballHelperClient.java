@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 import org.jspecify.annotations.Nullable;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -42,8 +41,8 @@ public final class LowballHelperClient implements ClientModInitializer {
 		});
 		ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> Market.get().stop());
 
-		KeyMapping inspect = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.lowballhelper.inspect", InputConstants.Type.KEYSYM,
-				GLFW.GLFW_KEY_V, KeyMapping.Category.register(Identifier.fromNamespaceAndPath(LowballHelper.MOD_ID, "main"))));
+		KeyMapping inspect = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.lowballhelper.inspect",
+				InputConstants.KEY_V, KeyMapping.Category.register(Identifier.fromNamespaceAndPath(LowballHelper.MOD_ID, "main"))));
 		LowballPanel.setInspectKey(inspect);
 
 		ScreenEvents.AFTER_INIT.register((mc, screen, w, h) -> {

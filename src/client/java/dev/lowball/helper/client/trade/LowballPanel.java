@@ -11,14 +11,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.joml.Vector2i;
 import org.jspecify.annotations.Nullable;
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -27,7 +24,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 
 import dev.lowball.helper.client.Items;
 import dev.lowball.helper.client.feature.SignAutofill;
-import dev.lowball.helper.client.mixin.AbstractContainerScreenAccessor;
+import dev.lowball.helper.client.ScreenAccess;
 import dev.lowball.helper.client.ui.Breakdown;
 import dev.lowball.helper.client.ui.Draw;
 import dev.lowball.helper.client.ui.QuickSettings;
@@ -137,7 +134,7 @@ public final class LowballPanel {
 	// ------------------------------------------------------------------ navigation
 
 	private boolean inspectHovered() {
-		Slot slot = ((AbstractContainerScreenAccessor) screen).lowball$hoveredSlot();
+		Slot slot = ScreenAccess.hoveredSlot(screen);
 		if (slot == null || !slot.hasItem() || Items.of(slot.getItem()) == null) {
 			return false;
 		}
@@ -212,9 +209,8 @@ public final class LowballPanel {
 
 	/** Picks side and scale, in GUI coordinates; false when there is no room at all. */
 	private boolean computeScale() {
-		AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) screen;
-		int left = acc.lowball$leftPos();
-		int right = left + acc.lowball$imageWidth();
+		int left = ScreenAccess.left(screen);
+		int right = left + ScreenAccess.imageWidth(screen);
 		int rightSpace = screen.width - right - GAP * 2;
 		int leftSpace = left - GAP * 2;
 		boolean useRight = switch (LowballConfig.get().panelSide) {
@@ -239,8 +235,7 @@ public final class LowballPanel {
 	}
 
 	private void layout(int bodyContentHeight, int footerHeight) {
-		AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) screen;
-		int top = (int) (acc.lowball$topPos() / scale);
+		int top = (int) (ScreenAccess.top(screen) / scale);
 		int wanted = headerHeight() + bodyContentHeight + footerHeight + 2;
 		// detail views are long: use the full height so less scrolling is needed
 		int minH = mode == Mode.DETAIL ? Math.min(screenH - GAP * 2, 260) : 0;
@@ -284,28 +279,40 @@ public final class LowballPanel {
 		}
 	}
 
-	/** Draws a tooltip now (the deferred tooltip pass has already run), shrunk to fit on short screens. */
+	/**
+	 * Draws a tooltip box now (the deferred tooltip pass has already run), shrunk to fit on short screens.
+	 * Drawn by hand because the vanilla tooltip API differs between Minecraft versions.
+	 */
 	private void drawTooltip(GuiGraphicsExtractor g, Font font, List<Component> lines, int guiMx, int guiMy) {
-		List<ClientTooltipComponent> comps = lines.stream().map(Component::getVisualOrderText).map(ClientTooltipComponent::create).toList();
-		int height = 8;
-		for (ClientTooltipComponent c : comps) {
-			height += c.getHeight(font);
+		List<FormattedCharSequence> seqs = new ArrayList<>();
+		int tw = 0;
+		for (Component c : lines) {
+			FormattedCharSequence seq = c.getVisualOrderText();
+			seqs.add(seq);
+			tw = Math.max(tw, font.width(seq));
 		}
-		float ts = Math.min(1f, (screen.height - 8) / (float) height);
-		ClientTooltipPositioner positioner = (sw, sh, mx, my, tw, th) -> {
-			int maxW = (int) (screen.width / ts);
-			int maxH = (int) (screen.height / ts);
-			int tx = mx + 12;
-			if (tx + tw + 4 > maxW) {
-				tx = Math.max(4, mx - 16 - tw);
-			}
-			int ty = Math.max(4, Math.min(my - 12, maxH - th - 4));
-			return new Vector2i(tx, ty);
-		};
+		int th = seqs.size() * 10 + (seqs.size() > 1 ? 2 : 0) - 1;
+		float ts = Math.min(1f, (screen.height - 12) / (float) (th + 8));
+		int maxW = (int) (screen.width / ts);
+		int maxH = (int) (screen.height / ts);
+		int mx = (int) (guiMx / ts);
+		int my = (int) (guiMy / ts);
+		int tx = mx + 12;
+		if (tx + tw + 6 > maxW) {
+			tx = Math.max(4, mx - 16 - tw);
+		}
+		int ty = Math.max(5, Math.min(my - 12, maxH - th - 5));
 		g.nextStratum();
 		g.pose().pushMatrix();
 		g.pose().scale(ts, ts);
-		g.tooltip(font, comps, (int) (guiMx / ts), (int) (guiMy / ts), positioner, null);
+		g.fill(tx - 4, ty - 4, tx + tw + 4, ty + th + 4, 0xF0100010);
+		g.outline(tx - 4, ty - 4, tw + 8, th + 8, 0xFF2A0A5A);
+		g.outline(tx - 3, ty - 3, tw + 6, th + 6, 0x505000FF);
+		int ly = ty;
+		for (int i = 0; i < seqs.size(); i++) {
+			g.text(font, seqs.get(i), tx, ly, Draw.WHITE, true);
+			ly += 10 + (i == 0 ? 2 : 0);
+		}
 		g.pose().popMatrix();
 	}
 
@@ -391,14 +398,13 @@ public final class LowballPanel {
 	}
 
 	private void renderCollapsed(GuiGraphicsExtractor g, Font font, int mx, int my) {
-		AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) screen;
 		String label = "◀ Lowball";
 		int bw = font.width(label) + 10;
-		int by = (int) (acc.lowball$topPos() / scale);
-		int bx = (int) Math.ceil((acc.lowball$leftPos() + acc.lowball$imageWidth() + GAP) / scale);
+		int by = (int) (ScreenAccess.top(screen) / scale);
+		int bx = (int) Math.ceil((ScreenAccess.left(screen) + ScreenAccess.imageWidth(screen) + GAP) / scale);
 		if (bx + bw > screenW) {
 			label = "Lowball ▶";
-			bx = (int) ((acc.lowball$leftPos() - GAP) / scale) - bw;
+			bx = (int) ((ScreenAccess.left(screen) - GAP) / scale) - bw;
 		}
 		boolean hover = Draw.inside(mx, my, bx, by, bx + bw, by + 14);
 		Draw.button(g, font, bx, by, bw, 14, label, hover, Draw.GOLD);
@@ -522,7 +528,7 @@ public final class LowballPanel {
 			return;
 		}
 		boolean hover = Draw.inside(mx, my, x + 1, ey, x + w - 1, ey + rowH - 1) && Draw.inside(mx, my, x, bodyTop, x + w, bodyBottom);
-		Slot hoveredSlot = ((AbstractContainerScreenAccessor) screen).lowball$hoveredSlot();
+		Slot hoveredSlot = ScreenAccess.hoveredSlot(screen);
 		boolean linked = hoveredSlot != null && hoveredSlot == e.slot();
 		if (hover || linked) {
 			g.fill(x + 1, ey, x + w - 1, ey + rowH - 1, Draw.BG_ROW_HOVER);
@@ -605,9 +611,9 @@ public final class LowballPanel {
 		if (c == null) {
 			String raw = name.getString();
 			if (raw.length() > 1 && raw.charAt(0) == '§') {
-				net.minecraft.ChatFormatting f = net.minecraft.ChatFormatting.getByCode(raw.charAt(1));
-				if (f != null && f.getColor() != null) {
-					return 0xFF000000 | f.getColor();
+				int rgb = dev.lowball.helper.client.Compat.legacyColor(raw.charAt(1));
+				if (rgb >= 0) {
+					return 0xFF000000 | rgb;
 				}
 			}
 			return Draw.DARK_GRAY;
@@ -785,9 +791,8 @@ public final class LowballPanel {
 		if (slot == null) {
 			return;
 		}
-		AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) screen;
-		int sx = acc.lowball$leftPos() + slot.x;
-		int sy = acc.lowball$topPos() + slot.y;
+		int sx = ScreenAccess.left(screen) + slot.x;
+		int sy = ScreenAccess.top(screen) + slot.y;
 		g.fill(sx, sy, sx + 16, sy + 16, 0x5055FF88);
 		g.outline(sx - 1, sy - 1, 18, 18, Draw.GREEN);
 	}

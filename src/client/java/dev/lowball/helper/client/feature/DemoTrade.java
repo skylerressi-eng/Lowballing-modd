@@ -33,7 +33,7 @@ public final class DemoTrade {
 		}
 		HypixelState.enableDemo();
 		SimpleContainer c = new SimpleContainer(45);
-		ItemStack pane = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
+		ItemStack pane = new ItemStack(Items.GLASS_PANE);
 		pane.set(DataComponents.CUSTOM_NAME, Component.literal(" "));
 		for (int row = 0; row < 5; row++) {
 			c.setItem(row * 9 + 4, pane.copy());
@@ -42,7 +42,7 @@ public final class DemoTrade {
 			c.setItem(i, pane.copy());
 		}
 		c.setItem(36, named(Items.GOLD_NUGGET, "§eCoin transaction"));
-		c.setItem(39, named(Items.LIME_TERRACOTTA, "§aTrading!"));
+		c.setItem(39, named(Items.TERRACOTTA, "§aTrading!"));
 
 		// your side: coins
 		c.setItem(0, named(Items.GOLD_INGOT, "§6250M coins"));
@@ -71,7 +71,7 @@ public final class DemoTrade {
 		c.setItem(24, books);
 
 		ChestMenu menu = new ChestMenu(MenuType.GENERIC_9x5, 0, mc.player.getInventory(), c, 5);
-		mc.setScreen(new ContainerScreen(menu, mc.player.getInventory(), Component.literal("You                  Technoblade")));
+		dev.lowball.helper.client.Compat.setScreen(new ContainerScreen(menu, mc.player.getInventory(), Component.literal("You                  Technoblade")));
 	}
 
 	private static ItemStack named(Item item, String name) {

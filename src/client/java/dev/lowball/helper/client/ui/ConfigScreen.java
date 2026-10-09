@@ -116,6 +116,6 @@ public final class ConfigScreen extends Screen {
 	@Override
 	public void onClose() {
 		LowballConfig.get().save();
-		minecraft.setScreen(parent);
+		dev.lowball.helper.client.Compat.setScreen(parent);
 	}
 }

@@ -3,7 +3,7 @@
 	"id": "lowballhelper",
 	"version": "${version}",
 	"name": "Lowball Helper",
-	"description": "Hypixel SkyBlock lowballing assistant: live LBIN, sales volume, listings, upgrade value and a suggested offer in a panel next to the trade menu.",
+	"description": "Hypixel SkyBlock lowballing assistant: live LBIN, sales volume, listings, upgrade, craft and exotic value with a full breakdown and a suggested offer next to the trade menu.",
 	"authors": [
 		"skylerressi-eng"
 	],
@@ -18,16 +18,13 @@
 			"dev.lowball.helper.client.LowballHelperClient"
 		]
 	},
-	"mixins": [
-		{
-			"config": "lowballhelper.client.mixins.json",
-			"environment": "client"
-		}
-	],
 	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.1",
-		"java": ">=25",
-		"fabric-api": "*"
+		"fabricloader": ">=0.16.0",
+		"minecraft": "${minecraft_range}",
+		"fabric-screen-api-v1": "*",
+		"fabric-command-api-v2": "*",
+		"fabric-key-mapping-api-v1": "*",
+		"fabric-lifecycle-events-v1": "*",
+		"fabric-item-api-v1": "*"
 	}
 }
