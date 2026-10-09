@@ -6,19 +6,19 @@ package dev.lowball.helper.valuation;
  */
 public enum UpgradeCategory {
 	GEMSTONES("Gemstones", 90),
-	GEM_SLOTS("Gem slot unlocks", 50),
+	GEM_SLOTS("Gem slot unlocks", 40),
 	SCROLLS("Ability scrolls", 90),
-	RECOMB("Recombobulator", 80),
-	ENCHANTS("Enchantments", 50),
-	STARS("Stars (essence)", 60),
-	MASTER_STARS("Master stars", 80),
-	POTATO_BOOKS("Potato books", 50),
-	REFORGE("Reforge", 50),
+	RECOMB("Recombobulator", 75),
+	ENCHANTS("Enchantments", 40),
+	STARS("Stars (essence)", 55),
+	MASTER_STARS("Master stars", 75),
+	POTATO_BOOKS("Potato books", 35),
+	REFORGE("Reforge", 30),
 	PET_ITEM("Pet items", 90),
-	SKIN("Skins", 80),
-	DYE("Dyes", 80),
-	RUNE("Runes", 60),
-	OTHER("Other upgrades", 50);
+	SKIN("Skins", 75),
+	DYE("Dyes", 75),
+	RUNE("Runes", 50),
+	OTHER("Other upgrades", 45);
 
 	public final String label;
 	public final int defaultCredit;

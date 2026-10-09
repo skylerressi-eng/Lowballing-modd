@@ -18,7 +18,10 @@ import dev.lowball.helper.market.CoflnetClient;
  * @param candidates  every base price that was considered; one is {@code chosen}
  * @param dailyVolume units sold per day, NaN if unknown
  * @param listed      current listings (BINs on AH or sell offers on bazaar), -1 if unknown
- * @param unitValue   base + credited upgrades, per unit
+ * @param comparable  sales over the last week of copies with the same recomb/stars/books/big enchants
+ * @param componentValue base + credited upgrades, per unit
+ * @param unitValue   final worth per unit: componentValue, capped by comparable sales
+ * @param worthNote   why unitValue differs from componentValue, or empty
  */
 public record Valuation(
 		SkyblockItem item,
@@ -38,7 +41,11 @@ public record Valuation(
 		List<Credited> upgrades,
 		@Nullable CraftCost craft,
 		@Nullable ExoticInfo exotic,
+		CoflnetClient.@Nullable History comparable,
+		String comparableFilters,
+		double componentValue,
 		double unitValue,
+		String worthNote,
 		List<String> warnings) {
 
 	/** A base price that was considered. */

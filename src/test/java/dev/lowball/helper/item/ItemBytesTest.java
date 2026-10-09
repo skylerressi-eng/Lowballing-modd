@@ -29,7 +29,7 @@ class ItemBytesTest {
 			assertFalse(item.id.isEmpty(), name);
 			if (name.startsWith("[Lvl")) {
 				assertTrue(item.pet, name + " should be a pet");
-				assertTrue(item.key.matches("[A-Z_]+;[0-5]@(LOW|100|200)"), name + " -> " + item.key);
+				assertTrue(item.key.matches("[A-Z_]+;[0-5]@(LOW|50|90|100|200)"), name + " -> " + item.key);
 				pets++;
 			}
 			if (name.contains("✪")) {

@@ -43,6 +43,8 @@ test {
 	useJUnitPlatform()
 	// ./gradlew test -Dlowball.live=true also runs the tests that hit the real Hypixel/Coflnet APIs
 	systemProperty "lowball.live", System.getProperty("lowball.live", "false")
+	systemProperty "lowball.polls", System.getProperty("lowball.polls", "1")
+	systemProperty "lowball.upgraded", System.getProperty("lowball.upgraded", "false")
 	testLogging {
 		showStandardStreams = System.getProperty("lowball.live") == "true"
 	}

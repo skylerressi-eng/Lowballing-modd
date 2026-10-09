@@ -40,7 +40,7 @@ public final class LowballConfig {
 	/** Percent credit per {@link dev.lowball.helper.valuation.UpgradeCategory} name, used in CUSTOM mode. */
 	public java.util.Map<String, Double> categoryCredit = new java.util.LinkedHashMap<>();
 	/** Use the crafting cost as a ceiling for the base price when it's cheaper than buying. */
-	public boolean craftCap = true;
+	public boolean craftCap = false;
 	/** Price exotic dyed armor from sales of the same color/type. */
 	public boolean exoticPricing = true;
 	public BazaarMode bazaarMode = BazaarMode.SELL_OFFER;

@@ -164,12 +164,14 @@ class ValuationTest {
 		m.prices.put("RARE_PART", Double.NaN);
 		m.recipes.put("THING", Optional.of(new NeuRepo.Recipe("crafting", List.of(new NeuRepo.Ingredient("PART", 4), new NeuRepo.Ingredient("SUB", 2)), 0, 1)));
 		m.recipes.put("SUB", Optional.of(new NeuRepo.Recipe("forge", List.of(new NeuRepo.Ingredient("PART", 1)), 500_000, 1)));
-		Valuation v = Valuator.compute(thing(), cfg(), m);
+		LowballConfig cap = cfg();
+		cap.craftCap = true;
+		Valuation v = Valuator.compute(thing(), cap, m);
 		assertNotNull(v.craft());
 		assertTrue(v.craft().complete());
-		// 4 × 1M + 2 × (1M + 500k coins) = 7M, cheaper than the 10M LBIN
+		// 4 × 1M + 2 × (1M + 500k coins) = 7M; capped at craft + 20% = 8.4M, below the 10M LBIN
 		assertEquals(7e6, v.craft().total(), 1e-6);
-		assertEquals(7e6, v.unitBase(), 1e-6);
+		assertEquals(8.4e6, v.unitBase(), 1e-6);
 		assertTrue(v.baseSource().startsWith("Craft cost"));
 
 		LowballConfig noCap = cfg();

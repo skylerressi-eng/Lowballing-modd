@@ -212,8 +212,8 @@ public final class Market {
 			return cofl.get(key, clean);
 		}
 
-		public CoflnetClient.@Nullable History history(String id, String filters) {
-			return cofl.history(id, filters);
+		public CoflnetClient.@Nullable History history(String id, String filters, String period) {
+			return cofl.history(id, filters, period);
 		}
 
 		public SalesTracker.@Nullable Volume localVolume(String key) {

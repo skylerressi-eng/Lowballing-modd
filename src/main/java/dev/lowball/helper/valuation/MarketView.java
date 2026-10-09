@@ -27,7 +27,8 @@ public interface MarketView {
 
 	CoflnetClient.@Nullable Stats coflnet(String key, boolean clean);
 
-	CoflnetClient.@Nullable History history(String id, String filters);
+	/** Sale history of an item id with Coflnet filters over "week" or "month". */
+	CoflnetClient.@Nullable History history(String id, String filters, String period);
 
 	SalesTracker.@Nullable Volume localVolume(String key);
 

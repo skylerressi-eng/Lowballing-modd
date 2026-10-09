@@ -49,7 +49,7 @@ final class FakeMarket implements MarketView {
 		return cofl.get(key + (clean ? "|clean" : ""));
 	}
 
-	public CoflnetClient.@Nullable History history(String id, String filters) {
+	public CoflnetClient.@Nullable History history(String id, String filters, String period) {
 		return history.get(id + "?" + filters);
 	}
 

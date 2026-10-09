@@ -77,7 +77,12 @@ public final class CoflnetClient {
 
 	/** 30 day history for an item id with extra filters, e.g. {@code Color=31:0:48}. */
 	public @Nullable History history(String id, String filters) {
-		String url = BASE + URLEncoder.encode(id, StandardCharsets.UTF_8) + "/history/month" + (filters.isEmpty() ? "" : "?" + filters);
+		return history(id, filters, "month");
+	}
+
+	/** History over {@code period} ("week" or "month") for an item id with extra filters. */
+	public @Nullable History history(String id, String filters, String period) {
+		String url = BASE + URLEncoder.encode(id, StandardCharsets.UTF_8) + "/history/" + period + (filters.isEmpty() ? "" : "?" + filters);
 		return lookup(url, true, History.class);
 	}
 
@@ -225,7 +230,9 @@ public final class CoflnetClient {
 			query += switch (bucket) {
 				case "200" -> "&PetLevel=200";
 				case "100" -> "&PetLevel=100-199";
-				default -> "&PetLevel=1-99";
+				case "90" -> "&PetLevel=90-99";
+				case "50" -> "&PetLevel=50-89";
+				default -> "&PetLevel=1-49";
 			};
 		}
 		return "PET_" + URLEncoder.encode(type, StandardCharsets.UTF_8) + query;

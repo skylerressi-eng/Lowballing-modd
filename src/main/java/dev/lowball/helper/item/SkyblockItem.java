@@ -170,6 +170,12 @@ public final class SkyblockItem {
 		if (level >= 100) {
 			return "100";
 		}
+		if (level >= 90) {
+			return "90";
+		}
+		if (level >= 50) {
+			return "50";
+		}
 		return "LOW";
 	}
 

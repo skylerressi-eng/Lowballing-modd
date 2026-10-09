@@ -27,6 +27,8 @@ import dev.lowball.helper.util.Fmt;
 public final class Valuator {
 	/** LBIN this far above the sold median is treated as inflated in SMART mode. */
 	static final double INFLATED = 1.6;
+	/** What buyers typically pay over raw craft cost (measured against real sales). */
+	static final double CRAFT_PREMIUM = 1.2;
 	/** Item categories where "clean" (no upgrades) copies trade differently from upgraded ones. */
 	private static final Set<String> GEAR = Set.of("SWORD", "LONGSWORD", "BOW", "WAND", "FISHING_WEAPON", "HELMET", "CHESTPLATE",
 			"LEGGINGS", "BOOTS", "NECKLACE", "CLOAK", "BELT", "GLOVES", "BRACELET", "DRILL", "PICKAXE", "AXE", "HOE", "SHOVEL",
@@ -202,21 +204,37 @@ public final class Valuator {
 					}
 				}
 				default -> {
+					// what copies actually sell for beats what sellers ask: take the lower of the two
+					double refVolume = !Double.isNaN(cleanMedian) ? coflClean.perDay() : cofl != null ? cofl.perDay() : local != null ? local.perDay() : 0;
+					boolean refTrusted = !Double.isNaN(ref) && refVolume >= 1;
 					if (Double.isNaN(comp)) {
 						base = ref;
 						source = refLabel + " (none listed)";
-					} else if (!Double.isNaN(ref) && comp > ref * INFLATED && volume >= 1) {
+					} else if (refTrusted && refVolume >= 3 && comp < ref * 0.05) {
+						// a listing at a fraction of what it sells for is a troll/expired/wrong-variant listing
+						base = ref;
+						source = refLabel + " (LBIN looks wrong)";
+					} else if (refTrusted && refVolume >= 3 && comp > ref * INFLATED) {
 						base = ref;
 						source = refLabel + " (LBIN inflated)";
+					} else if (refTrusted && ref < comp) {
+						// sellers ask a bit more than things sell for; real sales land in between
+						base = (ref + comp) / 2;
+						source = "Between " + compLabel + " and " + refLabel.toLowerCase(java.util.Locale.ROOT);
 					} else {
 						base = comp;
 						source = compLabel;
 					}
 				}
 			}
-			if (craftOk && (Double.isNaN(base) || (cfg.craftCap && cfg.valueMode != dev.lowball.helper.config.ValueMode.LBIN && craft.total() < base * 0.97))) {
+			// buyers pay a premium for not having to craft, so craft cost only caps with some headroom
+			double craftCeiling = craftOk ? craft.total() * CRAFT_PREMIUM : Double.NaN;
+			if (craftOk && Double.isNaN(base)) {
 				base = craft.total();
-				source = Double.isNaN(base) ? "Craft cost" : "Craft cost (cheaper than buying)";
+				source = "Craft cost";
+			} else if (craftOk && cfg.craftCap && cfg.valueMode != dev.lowball.helper.config.ValueMode.LBIN && craftCeiling < base) {
+				base = craftCeiling;
+				source = "Craft cost +" + Math.round((CRAFT_PREMIUM - 1) * 100) + "% (cheaper than buying)";
 			}
 			if (exotic != null && !Double.isNaN(exotic.estimate())) {
 				base = exotic.estimate();
@@ -275,16 +293,81 @@ public final class Valuator {
 		for (Valuation.Credited c : upgrades) {
 			credited += c.credited();
 		}
-		double unitValue = Double.isNaN(base) ? Double.NaN : base + credited;
+		double componentValue = Double.isNaN(base) ? Double.NaN : base + credited;
+
+		// reality check: what copies like this one (same recomb / stars / books / big enchants) actually sold for
+		CoflnetClient.History comparable = null;
+		String filters = "";
+		String worthNote = "";
+		double unitValue = componentValue;
+		if (!isBazaar && !item.pet && exotic == null && cfg.useCoflnet && upgradesRaw > 0) {
+			filters = comparableFilters(item, info, m);
+			if (!filters.isEmpty()) {
+				comparable = m.history(item.id, filters, "week");
+				if (comparable != null && comparable.sales() >= MIN_COMPARABLE && comparable.median() > 0 && !Double.isNaN(componentValue)) {
+					// the filters only describe some upgrades; gems, scrolls, drill parts etc. are added on top
+					double unmatched = 0;
+					for (Valuation.Credited c : upgrades) {
+						if (!COMPARABLE_COVERS.contains(c.upgrade().category())) {
+							unmatched += c.credited();
+						}
+					}
+					double ceiling = comparable.median() + unmatched;
+					if (ceiling < componentValue) {
+						unitValue = Math.max(base, ceiling);
+						worthNote = "capped by " + comparable.sales() + " sales of similar copies this week" + (unmatched > 0 ? " (+" + Fmt.coins(unmatched) + " extras)" : "");
+					}
+				}
+			}
+		}
 		return new Valuation(item, isBazaar, base, source, List.copyOf(cands), ah, bz, cofl, coflClean, median, cleanMedian,
-				volume, volumeSource, listed, List.copyOf(upgrades), craft, exotic, unitValue, List.copyOf(warnings));
+				volume, volumeSource, listed, List.copyOf(upgrades), craft, exotic, comparable, filters, componentValue, unitValue, worthNote,
+				List.copyOf(warnings));
+	}
+
+	/** Upgrade categories that the comparable-sales filters already describe. */
+	static final Set<UpgradeCategory> COMPARABLE_COVERS = Set.of(UpgradeCategory.RECOMB, UpgradeCategory.STARS, UpgradeCategory.MASTER_STARS,
+			UpgradeCategory.POTATO_BOOKS, UpgradeCategory.ENCHANTS);
+
+	/** Comparable sales need at least this many sales in the week to be trusted. */
+	static final int MIN_COMPARABLE = 3;
+
+	/**
+	 * Coflnet filters describing the upgrades that move the price most: recomb, stars, potato books and enchants worth
+	 * 5M+ (at most three). Empty when there's nothing to compare on.
+	 */
+	static String comparableFilters(SkyblockItem item, ItemRegistry.@Nullable Info info, MarketView m) {
+		List<String> f = new ArrayList<>();
+		boolean gear = info != null && GEAR.contains(info.category());
+		if (item.recombs > 0 || gear) {
+			f.add("Recombobulated=" + (item.recombs > 0));
+		}
+		if (item.stars > 0 || (info != null && !info.upgradeCosts().isEmpty())) {
+			f.add("Stars=" + item.stars);
+		}
+		if (item.potatoBooks > 0 || gear) {
+			f.add("HotPotatoCount=" + item.potatoBooks);
+		}
+		List<java.util.Map.Entry<String, Integer>> big = new ArrayList<>();
+		for (var e : item.enchants.entrySet()) {
+			double p = m.componentPrice("ENCHANTMENT_" + e.getKey() + "_" + e.getValue());
+			if (p >= 5_000_000) {
+				big.add(e);
+			}
+		}
+		big.sort((a, b) -> Double.compare(m.componentPrice("ENCHANTMENT_" + b.getKey() + "_" + b.getValue()),
+				m.componentPrice("ENCHANTMENT_" + a.getKey() + "_" + a.getValue())));
+		for (int i = 0; i < Math.min(3, big.size()); i++) {
+			f.add(big.get(i).getKey().toLowerCase(java.util.Locale.ROOT) + "=" + big.get(i).getValue());
+		}
+		return f.isEmpty() ? "" : String.join("&", f);
 	}
 
 	private static Valuation.ExoticInfo exotic(SkyblockItem item, Exotic.Type type, int def, MarketView m, LowballConfig cfg) {
 		CoflnetClient.History exact = null, sameType = null;
 		if (cfg.useCoflnet) {
-			exact = m.history(item.id, "Color=" + Exotic.coflnetColor(item.color));
-			sameType = m.history(item.id, "ExoticColor=" + URLEncoder.encode(type.coflnet, StandardCharsets.UTF_8).replace("+", "%20"));
+			exact = m.history(item.id, "Color=" + Exotic.coflnetColor(item.color), "month");
+			sameType = m.history(item.id, "ExoticColor=" + URLEncoder.encode(type.coflnet, StandardCharsets.UTF_8).replace("+", "%20"), "month");
 		}
 		AuctionStats exactL = m.auction(AuctionScanner.exoticHexKey(item.id, item.color));
 		AuctionStats typeL = m.auction(AuctionScanner.exoticTypeKey(item.id, type));

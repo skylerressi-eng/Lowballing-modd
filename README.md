@@ -87,9 +87,26 @@ Price lines are also added to item tooltips everywhere on SkyBlock (AH, `/viewit
 - **Pets** are priced by type, rarity *and level bracket* (1–99 / 100 / 200), so a level 1 Golden Dragon is never valued like a level 200. Tier-boosted pets price at their real tier.
 - **Enchanted books, runes and bazaar items** use the right key, e.g. `ENCHANTMENT_ULTIMATE_WISE_5` or `SPIRIT_RUNE;3`.
 - **Smart mode** (default): if the LBIN sits more than 60% above the 24h sold median **of clean copies only**, the LBIN is probably being held up, so the median is used instead.
-- **Craft-cost cap**: an item is never valued above what it costs to craft right now.
+- **Comparable sales cap**: an upgraded item is never valued above what copies with the same recomb, stars, potato books and big enchants sold for this week. Gems, scrolls and drill parts are added on top.
+- **Craft cost** is shown for every craftable item. Optionally it can cap the value at craft cost + 20% (off by default, because real sales showed it undervalues).
 - **Troll bazaar buy orders** (e.g. 1 coin) are ignored.
 - **AH tax** is exact: 1% / 2% / 2.5% listing fee by price bracket, plus the 1% claim tax over 1M.
+
+## Accuracy
+
+The valuation is tested against **real auctions that just sold**: each sold item is valued with live data and compared to the price it went for (`./gradlew test --tests '*LiveAccuracyTest*' -Dlowball.live=true`). Latest run, 130 sales:
+
+| Estimate ÷ sale price | Result |
+|---|---|
+| Median | **×1.00** |
+| Middle 50% of items | ×0.95 to ×1.00 |
+| Upgraded gear only (36 sales) | median ×0.92, slightly conservative |
+
+What keeps it from overvaluing:
+- the base is the lower end of LBIN and what clean copies actually sell for
+- upgrades only count partly
+- upgraded items are capped at what similar copies (same recomb, stars, potato books, big enchants) sold for this week
+- pet levels are bucketed (1–49, 50–89, 90–99, 100, 200)
 
 ## Offer presets
 
