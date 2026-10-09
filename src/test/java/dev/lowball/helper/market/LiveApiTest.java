@@ -52,18 +52,39 @@ class LiveApiTest {
 	}
 
 	@Test
-	void salesTrackerAndCoflnet() throws Exception {
+	void salesTrackerCoflnetAndNeu() throws Exception {
+		dev.lowball.helper.LowballHelper.setDataDir(java.nio.file.Files.createTempDirectory("lowball-live"));
 		SalesTracker t = new SalesTracker();
 		t.poll();
-		CoflnetClient.Stats[] got = new CoflnetClient.Stats[1];
 		CoflnetClient c = new CoflnetClient(() -> {
 		});
-		c.request("HYPERION", true);
-		for (int i = 0; i < 50 && got[0] == null; i++) {
+		CoflnetClient.Stats plain = null, clean = null;
+		CoflnetClient.History crystal = null;
+		for (int i = 0; i < 100 && (plain == null || clean == null || crystal == null); i++) {
+			plain = c.get("HYPERION", false);
+			clean = c.get("HYPERION", true);
+			crystal = c.history("SUPERIOR_DRAGON_CHESTPLATE", "ExoticColor=Crystal");
 			Thread.sleep(200);
-			got[0] = c.get("HYPERION");
 		}
-		assertNotNull(got[0]);
-		System.out.println("Coflnet HYPERION median " + Fmt.coins(got[0].median()) + " volume " + got[0].perDay() + "/day");
+		assertNotNull(plain);
+		assertNotNull(clean);
+		assertNotNull(crystal);
+		System.out.println("Coflnet HYPERION median " + Fmt.coins(plain.median()) + " (" + plain.perDay() + "/day), clean median "
+				+ Fmt.coins(clean.median()) + " (" + clean.perDay() + "/day)");
+		System.out.println("Crystal superior chestplates 30d: " + crystal.sales() + " sold, median " + Fmt.coins(crystal.median()));
+
+		NeuRepo neu = new NeuRepo(() -> {
+		});
+		java.util.Optional<NeuRepo.Recipe> r = null;
+		NeuRepo.ReforgeStone fabled = null;
+		for (int i = 0; i < 100 && (r == null || fabled == null); i++) {
+			r = neu.recipe("TERMINATOR");
+			fabled = neu.stone("fabled");
+			Thread.sleep(200);
+		}
+		assertNotNull(r);
+		assertTrue(r.isPresent());
+		assertNotNull(fabled);
+		System.out.println("Terminator recipe: " + r.get().inputs() + "; fabled stone " + fabled.id() + " " + fabled.costs());
 	}
 }

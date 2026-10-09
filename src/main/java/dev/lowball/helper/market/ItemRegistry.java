@@ -30,7 +30,9 @@ public final class ItemRegistry {
 	public record GemSlot(String type, List<Cost> unlockCost) {
 	}
 
-	public record Info(String id, String name, String tier, double npcSell, List<List<Cost>> upgradeCosts, List<GemSlot> gemSlots, boolean dungeon) {
+	/** @param color default leather color 0xRRGGBB, -1 if not dyeable */
+	public record Info(String id, String name, String tier, String category, double npcSell, List<List<Cost>> upgradeCosts,
+			List<GemSlot> gemSlots, boolean dungeon, int color) {
 	}
 
 	private final Map<String, Info> byId;
@@ -58,6 +60,17 @@ public final class ItemRegistry {
 
 	public @Nullable String idForName(String name) {
 		return idByLowerName.get(name.toLowerCase(Locale.ROOT));
+	}
+
+	/** Default leather color of an item, -1 if unknown. */
+	public int defaultColor(String id) {
+		Info i = byId.get(id);
+		return i == null ? -1 : i.color();
+	}
+
+	public String name(String id) {
+		Info i = byId.get(id);
+		return i != null ? i.name() : dev.lowball.helper.util.Text.prettyId(id);
 	}
 
 	public Iterable<Info> all() {
@@ -113,9 +126,10 @@ public final class ItemRegistry {
 					gems.add(new GemSlot(String.valueOf(str(so, "slot_type")), so.has("costs") ? costs(so.getAsJsonArray("costs")) : List.of()));
 				}
 			}
-			map.put(id, new Info(id, String.valueOf(str(o, "name")), String.valueOf(str(o, "tier")),
+			map.put(id, new Info(id, String.valueOf(str(o, "name")), String.valueOf(str(o, "tier")), String.valueOf(str(o, "category")),
 					o.has("npc_sell_price") ? o.get("npc_sell_price").getAsDouble() : 0,
-					List.copyOf(upgrades), List.copyOf(gems), o.has("dungeon_item") && o.get("dungeon_item").getAsBoolean()));
+					List.copyOf(upgrades), List.copyOf(gems), o.has("dungeon_item") && o.get("dungeon_item").getAsBoolean(),
+					dev.lowball.helper.item.Exotic.parseRgb(str(o, "color"))));
 		}
 		return new ItemRegistry(map);
 	}

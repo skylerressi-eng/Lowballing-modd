@@ -30,7 +30,6 @@ import dev.lowball.helper.market.Market;
 import dev.lowball.helper.util.Fmt;
 import dev.lowball.helper.valuation.Offer;
 import dev.lowball.helper.valuation.OfferCalculator;
-import dev.lowball.helper.valuation.Upgrade;
 import dev.lowball.helper.valuation.Valuation;
 import dev.lowball.helper.valuation.Valuator;
 
@@ -83,6 +82,15 @@ public final class LowballCommand {
 					return 1;
 				}))
 				.then(literal("status").executes(LowballCommand::status))
+				.then(literal("value").executes(ctx -> {
+					ItemStack held = ctx.getSource().getPlayer().getMainHandItem();
+					if (Items.of(held) == null) {
+						ctx.getSource().sendError(Component.literal("Hold a SkyBlock item to see its value breakdown"));
+						return 0;
+					}
+					LowballHelperClient.openNextTick(() -> Minecraft.getInstance().setScreen(new dev.lowball.helper.client.ui.ValueScreen(held)));
+					return 1;
+				}))
 				.then(literal("demo").executes(ctx -> {
 					LowballHelperClient.openNextTick(DemoTrade::open);
 					return 1;
@@ -99,6 +107,7 @@ public final class LowballCommand {
 		FabricClientCommandSource s = ctx.getSource();
 		s.sendFeedback(Component.literal(PREFIX + "§fCommands"));
 		s.sendFeedback(Component.literal("§e/lowball §7- settings"));
+		s.sendFeedback(Component.literal("§e/lowball value §7- full value breakdown of the item in your hand"));
 		s.sendFeedback(Component.literal("§e/lowball check §7- price check the item in your hand"));
 		s.sendFeedback(Component.literal("§e/lowball check <name> §7- price check any item"));
 		s.sendFeedback(Component.literal("§e/lowball preset <snipe|aggressive|standard|fair|generous> §7- switch preset"));
@@ -193,11 +202,11 @@ public final class LowballCommand {
 		if (!v.upgrades().isEmpty()) {
 			StringBuilder sb = new StringBuilder(" §7Upgrades: ");
 			int n = 0;
-			for (Upgrade u : v.upgrades()) {
+			for (Valuation.Credited c : v.upgrades()) {
 				if (n++ > 0) {
 					sb.append("§8, ");
 				}
-				sb.append("§7").append(u.label()).append(" §f").append(Fmt.coins(u.total()));
+				sb.append("§7").append(c.upgrade().label()).append(" §f").append(Fmt.coins(c.total()));
 			}
 			s.sendFeedback(Component.literal(sb.toString()));
 		}

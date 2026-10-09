@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.ToIntFunction;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 
 import dev.lowball.helper.LowballHelper;
+import dev.lowball.helper.item.Exotic;
 import dev.lowball.helper.item.ItemBytes;
 import dev.lowball.helper.item.SkyblockItem;
 import dev.lowball.helper.util.Http;
@@ -87,9 +89,26 @@ public final class AuctionScanner {
 	}
 
 	private final ExecutorService pool;
+	private final ToIntFunction<String> defaultColor;
+
+	/** @param defaultColor item id → normal leather color, -1 if unknown (used to index exotics) */
+	public AuctionScanner(ExecutorService pool, ToIntFunction<String> defaultColor) {
+		this.pool = pool;
+		this.defaultColor = defaultColor;
+	}
 
 	public AuctionScanner(ExecutorService pool) {
-		this.pool = pool;
+		this(pool, id -> -1);
+	}
+
+	/** AH key holding listings of the same piece in exactly this color. */
+	public static String exoticHexKey(String id, int color) {
+		return id + "#" + String.format(java.util.Locale.ROOT, "%06X", color & 0xFFFFFF);
+	}
+
+	/** AH key holding listings of the same piece with any exotic color of this type. */
+	public static String exoticTypeKey(String id, Exotic.Type type) {
+		return id + "#" + type.name();
 	}
 
 	/** Returns null if the data has not changed since {@code previousUpdate}. */
@@ -180,7 +199,7 @@ public final class AuctionScanner {
 		}
 	}
 
-	private static void readPage(int page, Map<String, Acc> out, long[] meta) throws IOException {
+	private void readPage(int page, Map<String, Acc> out, long[] meta) throws IOException {
 		try (Reader r = Http.reader(URL + page); JsonReader json = new JsonReader(r)) {
 			json.beginObject();
 			while (json.hasNext()) {
@@ -207,7 +226,7 @@ public final class AuctionScanner {
 		}
 	}
 
-	private static void readAuction(JsonReader json, Map<String, Acc> out) throws IOException {
+	private void readAuction(JsonReader json, Map<String, Acc> out) throws IOException {
 		boolean bin = false;
 		boolean claimed = false;
 		double startingBid = 0;
@@ -248,6 +267,13 @@ public final class AuctionScanner {
 			acc.addBin(startingBid / item.count, item.isClean());
 		} else {
 			acc.bids++;
+		}
+		if (bin && item.color >= 0) {
+			Exotic.Type type = Exotic.classify(item, defaultColor.applyAsInt(item.id));
+			if (type != Exotic.Type.NONE) {
+				out.computeIfAbsent(exoticHexKey(item.id, item.color), k -> new Acc(k, item.name)).addBin(startingBid, item.isClean());
+				out.computeIfAbsent(exoticTypeKey(item.id, type), k -> new Acc(k, item.name)).addBin(startingBid, item.isClean());
+			}
 		}
 	}
 }

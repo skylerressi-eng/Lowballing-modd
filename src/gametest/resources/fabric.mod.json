@@ -6,7 +6,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"fabric-client-gametest": [
-			"dev.lowball.helper.gametest.TradePanelClientTest"
+			"dev.lowball.helper.gametest.LowballPanelClientTest"
 		]
 	},
 	"depends": {

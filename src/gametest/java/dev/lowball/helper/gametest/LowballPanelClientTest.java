@@ -11,14 +11,14 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 
 import dev.lowball.helper.client.feature.DemoTrade;
 import dev.lowball.helper.client.trade.TradeMenu;
-import dev.lowball.helper.client.trade.TradePanel;
+import dev.lowball.helper.client.trade.LowballPanel;
 import dev.lowball.helper.market.Market;
 
 /**
  * Opens the demo trade in a real client, waits for live prices and screenshots the panel.
  * Run: xvfb-run ./gradlew runClientGameTest (screenshots land in build/run/clientGameTest/screenshots).
  */
-public class TradePanelClientTest implements FabricClientGameTest {
+public class LowballPanelClientTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
@@ -36,8 +36,34 @@ public class TradePanelClientTest implements FabricClientGameTest {
 			context.waitTicks(2);
 			context.takeScreenshot("panel-1080p");
 
-			hover(context, TradePanel::firstRowCenter);
-			context.takeScreenshot("panel-1080p-hover");
+			click(context, "row0");
+			context.getInput().setCursorPos(5, 5);
+			context.waitTicks(40);
+			context.takeScreenshot("breakdown-hyperion-1");
+			context.runOnClient(mc -> LowballPanel.scrollBy((ContainerScreen) mc.screen, 160));
+			context.waitTicks(2);
+			context.takeScreenshot("breakdown-hyperion-2");
+			context.runOnClient(mc -> LowballPanel.scrollBy((ContainerScreen) mc.screen, 200));
+			context.waitTicks(2);
+			context.takeScreenshot("breakdown-hyperion-3");
+			click(context, "back");
+
+			// the exotic chestplate (slot 23) via the inspect path
+			context.runOnClient(mc -> LowballPanel.inspect((ContainerScreen) mc.screen, ((ContainerScreen) mc.screen).getMenu().slots.get(23).getItem()));
+			context.waitTicks(60);
+			context.getInput().setCursorPos(5, 5);
+			context.waitTicks(2);
+			context.takeScreenshot("breakdown-exotic");
+			click(context, "back");
+
+			// terminator: crafting cost section
+			context.runOnClient(mc -> LowballPanel.inspect((ContainerScreen) mc.screen, ((ContainerScreen) mc.screen).getMenu().slots.get(7).getItem()));
+			context.waitTicks(60);
+			context.runOnClient(mc -> LowballPanel.scrollBy((ContainerScreen) mc.screen, 150));
+			context.waitTicks(2);
+			context.takeScreenshot("breakdown-terminator-craft");
+			click(context, "back");
+			context.getInput().setCursorPos(5, 5);
 
 			click(context, "settings");
 			context.getInput().setCursorPos(5, 5);
@@ -50,8 +76,7 @@ public class TradePanelClientTest implements FabricClientGameTest {
 			context.getInput().setCursorPos(5, 5);
 			context.waitTicks(2);
 			context.takeScreenshot("panel-small-window");
-			hover(context, TradePanel::firstRowCenter);
-			context.takeScreenshot("panel-small-window-hover");
+			context.takeScreenshot("panel-small-window-2");
 
 			click(context, "collapse");
 			context.waitTicks(2);
@@ -89,6 +114,12 @@ public class TradePanelClientTest implements FabricClientGameTest {
 			}
 			context.runOnClient(mc -> mc.setScreen(null));
 
+			// /lowball value screen
+			context.runOnClient(mc -> mc.setScreen(new dev.lowball.helper.client.ui.ValueScreen(DemoTrade.hyperion())));
+			context.waitTicks(40);
+			context.takeScreenshot("value-screen");
+			context.runOnClient(mc -> mc.setScreen(null));
+
 			// settings screen
 			context.runOnClient(mc -> mc.setScreen(new dev.lowball.helper.client.ui.ConfigScreen()));
 			context.waitTicks(3);
@@ -112,7 +143,7 @@ public class TradePanelClientTest implements FabricClientGameTest {
 	}
 
 	private static void click(ClientGameTestContext context, String id) {
-		hover(context, s -> TradePanel.controlCenter(s, id));
+		hover(context, s -> LowballPanel.controlCenter(s, id));
 		context.getInput().pressMouse(0);
 		context.waitTicks(2);
 	}

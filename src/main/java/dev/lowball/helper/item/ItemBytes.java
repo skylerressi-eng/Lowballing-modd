@@ -27,9 +27,11 @@ public final class ItemBytes {
 			CompoundTag entry = list.getCompoundOrEmpty(i);
 			CompoundTag tag = entry.getCompoundOrEmpty("tag");
 			CompoundTag attrs = tag.getCompoundOrEmpty("ExtraAttributes");
-			String name = tag.getCompoundOrEmpty("display").getStringOr("Name", fallbackName);
+			CompoundTag display = tag.getCompoundOrEmpty("display");
+			String name = display.getStringOr("Name", fallbackName);
 			int count = entry.getIntOr("Count", 1);
-			SkyblockItem item = SkyblockItem.of(attrs, Text.strip(name), count);
+			int color = display.contains("color") ? display.getIntOr("color", -1) : -1;
+			SkyblockItem item = SkyblockItem.of(attrs, Text.strip(name), count, color);
 			if (item != null) {
 				out.add(item);
 			}

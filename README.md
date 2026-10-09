@@ -26,15 +26,42 @@ The footer shows:
 - what you're actually paying right now, coloured green, yellow or red against the suggestion
 - profit at that price
 
-Hover any row for the full breakdown:
+Hover a row for a quick summary. **Click it (or press `V` over any item in any menu: AH, `/viewitem`, chests, your inventory) for the full breakdown** of how the value was calculated:
 
 ![Breakdown](docs/breakdown.png)
 
-- the 5 cheapest BINs, the BIN and auction counts, and the clean LBIN
-- the 24h sold median
-- volume and its source, and how long the current supply takes to sell through
-- every applied upgrade and what it costs today
-- why the offer % moved, the resale value after tax, and any warnings
+1. **Result**: worth, suggested offer, resale after tax, profit, and the formula `worth = base + credited upgrades`.
+2. **① Base price**: every price that was considered, with ✔ on the one used:
+   - clean LBIN and LBIN
+   - clean sold median and sold median (24h, Coflnet)
+   - craft cost
+   - exotic estimate
+   - NPC price
+3. **Market**: sales/day and the source, BIN/auction counts, the 5 cheapest listings, and how long the supply takes to sell through.
+4. **② Upgrades**, grouped by category, each item priced at today's cost and the credit % applied:
+   - gemstones and gem slots, enchantments, stars and master stars
+   - recomb, potato books, reforge stone + apply cost
+   - scrolls, pet items, skins, dyes, runes and more
+5. **Crafting cost**: every ingredient × price from its recipe (NotEnoughUpdates repo). Unpriced ingredients are themselves priced from their recipes, and forge/NPC coins are included.
+6. **③ Offer**: preset %, each volume/supply adjustment, rounding and tax.
+7. **Heads up**: warnings.
+
+![Upgrades](docs/breakdown-upgrades.png) ![Craft cost](docs/craft-cost.png)
+
+### Exotics
+
+Dyed leather armor whose color isn't its normal one, and didn't come from a dye item, is detected and labelled **Exotic / Crystal / Fairy / OG Fairy / Spook**. It's then priced from:
+1. sales of that exact hex over the last 30 days, then
+2. sales of the same exotic type, then
+3. current listings of the same color or type.
+
+The breakdown shows a swatch of the color next to the piece's normal color, the sales history and the listings.
+
+![Exotic](docs/exotic.png)
+
+`/lowball value` opens the same breakdown full screen for the item in your hand:
+
+![Value screen](docs/value-screen.png)
 
 Price lines are also added to item tooltips everywhere on SkyBlock (AH, `/viewitem`, your inventory and so on):
 
@@ -42,7 +69,15 @@ Price lines are also added to item tooltips everywhere on SkyBlock (AH, `/viewit
 
 ## How the value is worked out
 
-- **Clean LBIN.** For upgraded items, the base is the cheapest listing *without* a recomb, potato books, stars or gems. Upgrades are then added on top at your **upgrade credit %** (default 50%). Upgrades priced:
+- **Clean LBIN.** For upgraded items, the base is the cheapest listing *without* a recomb, potato books, stars or gems. Upgrades are added on top with a **credit % per category**. Balanced (default):
+  - gems, scrolls and pet items 90% (they can be removed and resold)
+  - recomb and master stars 80%
+  - skins and dyes 80%
+  - essence stars and runes 60%
+  - books, enchants and reforges 50%
+  - gem slot unlocks 50%
+
+  You can also pick Conservative, Full cost, None, or set your own % per category in `/lowball`. Upgrades priced:
   - recombobulator, hot and fuming potato books
   - every enchant, at the bazaar price for that book
   - dungeon stars (essence) and master stars, plus Kuudra-style star costs from the item data
@@ -51,7 +86,8 @@ Price lines are also added to item tooltips everywhere on SkyBlock (AH, `/viewit
   - pet held items and pet skins
 - **Pets** are priced by type, rarity *and level bracket* (1–99 / 100 / 200), so a level 1 Golden Dragon is never valued like a level 200. Tier-boosted pets price at their real tier.
 - **Enchanted books, runes and bazaar items** use the right key, e.g. `ENCHANTMENT_ULTIMATE_WISE_5` or `SPIRIT_RUNE;3`.
-- **Smart mode** (default): if the LBIN sits more than 60% above the 24h sold median, the LBIN is probably being held up, so the median is used instead.
+- **Smart mode** (default): if the LBIN sits more than 60% above the 24h sold median **of clean copies only**, the LBIN is probably being held up, so the median is used instead.
+- **Craft-cost cap**: an item is never valued above what it costs to craft right now.
 - **Troll bazaar buy orders** (e.g. 1 coin) are ignored.
 - **AH tax** is exact: 1% / 2% / 2.5% listing fee by price bracket, plus the 1% claim tax over 1M.
 
@@ -82,6 +118,8 @@ Then, by default:
 - **Copy offer** copies the offer (e.g. `8.73m`) to your clipboard.
 - **Autofill coins**: press it, then click the coin button in the trade. The offer is typed into the sign for you. You still check it and press Done yourself; the mod never clicks or confirms anything for you.
 - Hover a row to highlight its slot in the trade; hover a slot to highlight its row.
+- Click a row for its breakdown; `◀ Back` or Esc returns to the list.
+- Press **`V`** (rebindable under Controls → Lowball Helper) over any item in any menu to open the breakdown beside that menu.
 
 ![Quick settings](docs/quick-settings.png)
 
@@ -90,7 +128,8 @@ Then, by default:
 | Command | |
 |---|---|
 | `/lowball` (or `/lbh`) | All settings |
-| `/lowball check` | Price check the item in your hand |
+| `/lowball value` | Full breakdown of the item in your hand |
+| `/lowball check` | Price check the item in your hand (chat) |
 | `/lowball check <item name>` | Price check anything (tab-completes names) |
 | `/lowball preset <snipe\|aggressive\|standard\|fair\|generous>` | Switch preset |
 | `/lowball percent <1-100>` | Custom % |
@@ -101,8 +140,8 @@ Then, by default:
 ## Install
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **26.1.2** and put [Fabric API](https://modrinth.com/mod/fabric-api) in your `mods` folder.
-2. Get `lowball-helper-1.0.0.jar`:
-   - from the **Actions** tab of this repo (latest *Build* run → *lowball-helper* artifact), or
+2. Get the jar: **[download lowball-helper-1.1.0.jar](https://github.com/skylerressi-eng/Lowballing-modd/raw/claude/confident-brahmagupta-7vat8h/download/lowball-helper-1.1.0.jar)**
+   - or from the **Actions** tab of this repo (latest *Build* run → *lowball-helper* artifact), or
    - by building it yourself: `./gradlew build` (needs JDK 25); the jar is in `build/libs/`.
 3. Put the jar in your `mods` folder and launch.
 
@@ -117,7 +156,8 @@ All data comes from public endpoints; no API key is needed.
   - `skyblock/bazaar`: every minute.
   - `skyblock/auctions_ended`: every minute, for the mod's own sales counts.
   - `resources/skyblock/items`: every 12 hours, for star and gem-slot costs and NPC prices.
-- **Coflnet** (`sky.coflnet.com`): 24h volume and sold median, fetched only for items you look at. Rate-limited and cached for 15 minutes.
+- **Coflnet** (`sky.coflnet.com`): 24h volume, sold median and clean sold median, plus 30-day color history for exotics. Fetched only for items you look at, rate-limited and cached.
+- **NotEnoughUpdates repo** (GitHub): recipes and reforge stones, fetched per item on demand and cached on disk for 3 days.
 
 Fetching only runs while you're connected to Hypixel (or during `/lowball demo`). The last scan is cached on disk, so prices show right away after a restart.
 

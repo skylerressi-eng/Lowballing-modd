@@ -22,6 +22,7 @@ import org.jspecify.annotations.Nullable;
 import dev.lowball.helper.LowballHelper;
 import dev.lowball.helper.config.BazaarMode;
 import dev.lowball.helper.config.LowballConfig;
+import dev.lowball.helper.valuation.MarketView;
 
 /** Owns all market data and the background jobs that refresh it. Every getter is safe to call from the render thread. */
 public final class Market {
@@ -43,6 +44,7 @@ public final class Market {
 	private final SalesTracker sales = new SalesTracker();
 	private final AtomicInteger version = new AtomicInteger();
 	private final CoflnetClient cofl = new CoflnetClient(version::incrementAndGet);
+	private final NeuRepo neu = new NeuRepo(version::incrementAndGet);
 	private final AtomicBoolean started = new AtomicBoolean();
 	private ScheduledExecutorService scheduler;
 	private ExecutorService pool;
@@ -115,6 +117,10 @@ public final class Market {
 		return cofl;
 	}
 
+	public NeuRepo neu() {
+		return neu;
+	}
+
 	public long auctionsFetchedAt() {
 		return auctionsFetchedAt;
 	}
@@ -159,7 +165,80 @@ public final class Market {
 		if (a != null) {
 			return !Double.isNaN(a.cleanLowest()) ? a.cleanLowest() : a.lowest();
 		}
+		// NEU style enchant ids ("SHARPNESS;6") used in recipes
+		int semi = id.indexOf(';');
+		if (semi > 0 && !id.contains("@")) {
+			double book = bazaarPrice("ENCHANTMENT_" + id.substring(0, semi) + "_" + id.substring(semi + 1));
+			if (!Double.isNaN(book)) {
+				return book;
+			}
+		}
 		return Double.NaN;
+	}
+
+	/** Where {@link #componentPrice} got its number: "BZ", "AH" or null. */
+	public @Nullable String componentSource(String id) {
+		if (!Double.isNaN(bazaarPrice(id))) {
+			return "BZ";
+		}
+		if (auctions.containsKey(id)) {
+			return "AH";
+		}
+		return id.indexOf(';') > 0 && !Double.isNaN(componentPrice(id)) ? "BZ" : null;
+	}
+
+	private final MarketView view = new MarketView() {
+		public @Nullable BazaarProduct bazaar(String id) {
+			return Market.this.bazaar(id);
+		}
+
+		public @Nullable AuctionStats auction(String key) {
+			return Market.this.auction(key);
+		}
+
+		public double bazaarPrice(String id) {
+			return Market.this.bazaarPrice(id);
+		}
+
+		public double componentPrice(String id) {
+			return Market.this.componentPrice(id);
+		}
+
+		public @Nullable String componentSource(String id) {
+			return Market.this.componentSource(id);
+		}
+
+		public CoflnetClient.@Nullable Stats coflnet(String key, boolean clean) {
+			return cofl.get(key, clean);
+		}
+
+		public CoflnetClient.@Nullable History history(String id, String filters) {
+			return cofl.history(id, filters);
+		}
+
+		public SalesTracker.@Nullable Volume localVolume(String key) {
+			return sales.volume(key, System.currentTimeMillis());
+		}
+
+		public ItemRegistry registry() {
+			return items;
+		}
+
+		public java.util.@Nullable Optional<NeuRepo.Recipe> recipe(String id) {
+			return neu.recipe(id);
+		}
+
+		public NeuRepo.@Nullable ReforgeStone stone(String modifier) {
+			return neu.stone(modifier);
+		}
+
+		public boolean auctionsLoaded() {
+			return auctionsFetchedAt > 0;
+		}
+	};
+
+	public MarketView view() {
+		return view;
 	}
 
 	// ------------------------------------------------------------------ jobs
@@ -224,7 +303,8 @@ public final class Market {
 		scanning = true;
 		try {
 			long t0 = System.nanoTime();
-			AuctionScanner.Result result = new AuctionScanner(pool).scan(auctionsApiUpdated);
+			ItemRegistry reg = items;
+			AuctionScanner.Result result = new AuctionScanner(pool, reg::defaultColor).scan(auctionsApiUpdated);
 			if (result == null) {
 				return;
 			}

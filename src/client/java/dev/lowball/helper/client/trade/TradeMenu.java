@@ -25,6 +25,9 @@ public final class TradeMenu {
 	}
 
 	public static @Nullable String partner(@Nullable Screen screen) {
+		if (screen == null) {
+			return null;
+		}
 		if (!(screen instanceof ContainerScreen cs) || !(cs.getMenu() instanceof ChestMenu menu) || menu.getRowCount() != 5) {
 			return null;
 		}

@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.DyedItemColor;
 import org.jspecify.annotations.Nullable;
 
 import dev.lowball.helper.item.SkyblockItem;
@@ -26,7 +27,8 @@ public final class Items {
 		if (data == null || data.isEmpty()) {
 			return null;
 		}
-		return SkyblockItem.of(data.copyTag(), stack.getHoverName().getString(), stack.getCount());
+		DyedItemColor dyed = stack.get(DataComponents.DYED_COLOR);
+		return SkyblockItem.of(data.copyTag(), stack.getHoverName().getString(), stack.getCount(), dyed != null ? dyed.rgb() & 0xFFFFFF : -1);
 	}
 
 	/** Coins shown as an item in the trade menu ("1.5M coins"). NaN if the stack isn't coins. */

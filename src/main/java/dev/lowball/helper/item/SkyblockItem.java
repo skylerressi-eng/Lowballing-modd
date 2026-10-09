@@ -46,12 +46,22 @@ public final class SkyblockItem {
 	public final int stars;
 	public final boolean hasGems;
 	public final Map<String, Integer> enchants;
+	/** Leather dye color as 0xRRGGBB, or -1 when the item has none. */
+	public final int color;
+	/** Reforge name from {@code modifier}, lower case, or null. */
+	public final @Nullable String reforge;
+	public final @Nullable String dyeItem;
 
-	private SkyblockItem(String id, String name, int count, CompoundTag attrs) {
+	private SkyblockItem(String id, String name, int count, CompoundTag attrs, int color) {
 		this.id = id;
 		this.name = name;
 		this.count = Math.max(1, count);
 		this.attrs = attrs;
+		this.color = color < 0 ? -1 : color & 0xFFFFFF;
+		String mod = attrs.getStringOr("modifier", "");
+		this.reforge = mod.isEmpty() ? null : mod.toLowerCase(Locale.ROOT);
+		String dye = attrs.getStringOr("dye_item", "");
+		this.dyeItem = dye.isEmpty() ? null : dye;
 
 		this.recombs = attrs.getIntOr("rarity_upgrades", 0);
 		this.potatoBooks = attrs.getIntOr("hot_potato_count", 0);
@@ -115,6 +125,11 @@ public final class SkyblockItem {
 	 * @param name  display name, with or without formatting codes
 	 */
 	public static @Nullable SkyblockItem of(@Nullable CompoundTag attrs, String name, int count) {
+		return of(attrs, name, count, -1);
+	}
+
+	/** @param color leather dye color (0xRRGGBB) or -1 */
+	public static @Nullable SkyblockItem of(@Nullable CompoundTag attrs, String name, int count, int color) {
 		if (attrs == null) {
 			return null;
 		}
@@ -125,12 +140,19 @@ public final class SkyblockItem {
 		if (id.isEmpty()) {
 			return null;
 		}
-		return new SkyblockItem(id, cleanName(name), count, attrs);
+		return new SkyblockItem(id, cleanName(name), count, attrs, color);
 	}
 
 	/** True if nothing is applied that typically changes the price (recomb, potato books, stars, gems). */
 	public boolean isClean() {
+		if (pet) {
+			return petHeldItem == null && petSkin == null;
+		}
 		return recombs == 0 && potatoBooks == 0 && stars == 0 && !hasGems;
+	}
+
+	public String colorHex() {
+		return color < 0 ? "" : String.format(Locale.ROOT, "%06X", color);
 	}
 
 	public boolean isEnchantedBook() {

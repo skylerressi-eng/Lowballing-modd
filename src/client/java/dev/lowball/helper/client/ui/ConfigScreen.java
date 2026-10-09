@@ -36,7 +36,7 @@ public final class ConfigScreen extends Screen {
 	@Override
 	protected void init() {
 		optionButtons.clear();
-		List<Options.Option> all = Options.ALL;
+		List<Options.Option> all = Options.screenOptions();
 		int colW = 150;
 		int gap = 6;
 		int rowH = 22;
@@ -96,7 +96,7 @@ public final class ConfigScreen extends Screen {
 
 	private void refreshLabels() {
 		for (int i = 0; i < optionButtons.size(); i++) {
-			optionButtons.get(i).setMessage(label(Options.ALL.get(firstOption + i)));
+			optionButtons.get(i).setMessage(label(Options.screenOptions().get(firstOption + i)));
 		}
 	}
 

@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 
 import dev.lowball.helper.client.HypixelState;
 import dev.lowball.helper.client.Items;
+import dev.lowball.helper.client.trade.LowballPanelKey;
 import dev.lowball.helper.config.LowballConfig;
 import dev.lowball.helper.item.SkyblockItem;
 import dev.lowball.helper.market.AuctionStats;
@@ -71,8 +72,17 @@ public final class PriceTooltip {
 			String listed = v.listed() >= 0 ? " §8· §e" + v.listed() + " §7on AH" : "";
 			first = "§6Lowball §8» " + price + " §8· " + vol + listed;
 		}
-		String second = "§7Worth §f" + Fmt.coins(v.totalValue()) + (v.upgradesRaw() > 0 ? " §8(+" + Fmt.coins(v.upgradesRaw()) + " upgrades)" : "")
+		String second = "§7Worth §f" + Fmt.coins(v.totalValue()) + (v.upgradesCredited() > 0 ? " §8(+" + Fmt.coins(v.upgradesCredited()) + " upgrades)" : "")
 				+ " §8→ §aOffer " + Fmt.coins(o.totalOffer()) + " §7(" + Fmt.percent(o.percent()) + ")";
-		return List.of(Component.literal(first), Component.literal(second));
+		List<Component> out = new java.util.ArrayList<>();
+		out.add(Component.literal(first));
+		out.add(Component.literal(second));
+		if (v.exotic() != null) {
+			out.add(Component.literal("§d" + v.exotic().type().label + " §8#" + v.exotic().hex() + " §7" + v.exotic().estimateSource()));
+		}
+		if (v.craft() != null && v.craft().complete() && v.craft().total() > 0) {
+			out.add(Component.literal("§7Craft cost §f" + Fmt.coins(v.craft().total()) + " §8· press §7" + LowballPanelKey.name() + " §8for breakdown"));
+		}
+		return out;
 	}
 }

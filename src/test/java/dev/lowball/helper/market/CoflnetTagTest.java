@@ -15,5 +15,6 @@ class CoflnetTagTest {
 		assertEquals("PET_BAL?Rarity=EPIC", CoflnetClient.tag("BAL;3"));
 		assertNull(CoflnetClient.tag("ENCHANTMENT_SHARPNESS_6"));
 		assertNull(CoflnetClient.tag("SPIRIT_RUNE;3"));
+		assertNull(CoflnetClient.tag("SUPERIOR_DRAGON_CHESTPLATE#1F0030"));
 	}
 }

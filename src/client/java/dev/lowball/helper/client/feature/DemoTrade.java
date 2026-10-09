@@ -14,6 +14,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.DyedItemColor;
 
 import dev.lowball.helper.client.HypixelState;
 
@@ -57,6 +58,17 @@ public final class DemoTrade {
 		c.setItem(15, recomb);
 		c.setItem(16, pet(Items.PLAYER_HEAD, "§7[Lvl 200] §6Golden Dragon", "GOLDEN_DRAGON", "LEGENDARY", null));
 		c.setItem(17, item(Items.DIAMOND_SWORD, "§9Aspect of the End", "ASPECT_OF_THE_END"));
+		// a crystal-dyed exotic
+		ItemStack exotic = item(Items.LEATHER_CHESTPLATE, "§6Superior Dragon Chestplate", "SUPERIOR_DRAGON_CHESTPLATE");
+		exotic.set(DataComponents.DYED_COLOR, new DyedItemColor(0x1F0030));
+		c.setItem(23, exotic);
+		ItemStack books = book("ultimate_wise", 5, "§9Enchanted Book");
+		CompoundTag bt = books.get(DataComponents.CUSTOM_DATA).copyTag();
+		CompoundTag ench = bt.getCompoundOrEmpty("enchantments");
+		ench.putInt("sharpness", 6);
+		bt.put("enchantments", ench);
+		books.set(DataComponents.CUSTOM_DATA, CustomData.of(bt));
+		c.setItem(24, books);
 
 		ChestMenu menu = new ChestMenu(MenuType.GENERIC_9x5, 0, mc.player.getInventory(), c, 5);
 		mc.setScreen(new ContainerScreen(menu, mc.player.getInventory(), Component.literal("You                  Technoblade")));
@@ -79,7 +91,8 @@ public final class DemoTrade {
 		return s;
 	}
 
-	private static ItemStack hyperion() {
+	/** The upgraded demo Hyperion, for previews. */
+	public static ItemStack hyperion() {
 		CompoundTag t = new CompoundTag();
 		t.putString("id", "HYPERION");
 		t.putInt("rarity_upgrades", 1);

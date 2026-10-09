@@ -36,8 +36,13 @@ public final class LowballConfig {
 	public ValueMode valueMode = ValueMode.SMART;
 	/** Prefer LBIN of items without recomb/potato books/stars/gems as the base. */
 	public boolean useCleanLbin = true;
-	/** How much of the bazaar cost of applied upgrades counts towards value (percent). */
-	public double upgradeCredit = 50;
+	public UpgradeMode upgradeMode = UpgradeMode.BALANCED;
+	/** Percent credit per {@link dev.lowball.helper.valuation.UpgradeCategory} name, used in CUSTOM mode. */
+	public java.util.Map<String, Double> categoryCredit = new java.util.LinkedHashMap<>();
+	/** Use the crafting cost as a ceiling for the base price when it's cheaper than buying. */
+	public boolean craftCap = true;
+	/** Price exotic dyed armor from sales of the same color/type. */
+	public boolean exoticPricing = true;
 	public BazaarMode bazaarMode = BazaarMode.SELL_OFFER;
 	public double bazaarTaxPercent = 1.25;
 
@@ -110,7 +115,12 @@ public final class LowballConfig {
 		if (panelSide == null) panelSide = PanelSide.AUTO;
 		if (bazaarMode == null) bazaarMode = BazaarMode.SELL_OFFER;
 		customPercent = clamp(customPercent, 1, 100);
-		upgradeCredit = clamp(upgradeCredit, 0, 100);
+		if (upgradeMode == null) upgradeMode = UpgradeMode.BALANCED;
+		if (categoryCredit == null) categoryCredit = new java.util.LinkedHashMap<>();
+		for (var c : dev.lowball.helper.valuation.UpgradeCategory.values()) {
+			categoryCredit.putIfAbsent(c.name(), (double) c.defaultCredit);
+			categoryCredit.put(c.name(), clamp(categoryCredit.get(c.name()), 0, 100));
+		}
 		maxPercent = clamp(maxPercent, 1, 100);
 		minPercent = clamp(minPercent, 0, maxPercent);
 		minProfit = Math.max(0, minProfit);
@@ -130,8 +140,13 @@ public final class LowballConfig {
 		}
 	}
 
+	public double credit(dev.lowball.helper.valuation.UpgradeCategory c) {
+		return upgradeMode.credit(c, this);
+	}
+
 	public void resetToDefaults() {
 		LowballConfig d = new LowballConfig();
+		d.sanitize();
 		for (var field : LowballConfig.class.getDeclaredFields()) {
 			if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
 				continue;

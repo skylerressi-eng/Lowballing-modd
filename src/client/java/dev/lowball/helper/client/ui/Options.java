@@ -8,7 +8,9 @@ import dev.lowball.helper.config.LowballConfig;
 import dev.lowball.helper.config.PanelSide;
 import dev.lowball.helper.config.Preset;
 import dev.lowball.helper.config.RoundMode;
+import dev.lowball.helper.config.UpgradeMode;
 import dev.lowball.helper.config.ValueMode;
+import dev.lowball.helper.valuation.UpgradeCategory;
 import dev.lowball.helper.util.Fmt;
 
 /** Every user setting as a clickable option, shared by the config screen and the in-panel quick settings. */
@@ -27,7 +29,7 @@ public final class Options {
 		}
 	}
 
-	private static final double[] CREDITS = {0, 25, 50, 75, 100};
+	private static final double[] CREDITS = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
 	private static final double[] MIN_PROFITS = {0, 100_000, 250_000, 500_000, 1_000_000, 2_500_000, 5_000_000, 10_000_000};
 	private static final double[] MAX_PCTS = {80, 85, 90, 95, 100};
 	private static final int[] SCANS = {0, 2, 5, 10, 15, 30};
@@ -66,9 +68,15 @@ public final class Options {
 			new Option("Clean LBIN base", () -> onOff(c().useCleanLbin),
 					(cfg, back) -> cfg.useCleanLbin = !cfg.useCleanLbin,
 					"Price upgraded items from the cheapest listing without recomb/books/stars/gems, then add upgrades.", true),
-			new Option("Upgrade credit", () -> Math.round(c().upgradeCredit) + "%",
-					(cfg, back) -> cfg.upgradeCredit = cycle(CREDITS, cfg.upgradeCredit, back),
-					"How much of the cost of recombs, books, enchants, stars, gems etc. counts as value.", true),
+			new Option("Upgrade credit", () -> c().upgradeMode.label,
+					(cfg, back) -> cfg.upgradeMode = cycle(UpgradeMode.values(), cfg.upgradeMode, back),
+					"How much of the cost of applied upgrades counts as value. Balanced: gems/scrolls/pet items 90%, recomb 80%, master stars 80%, essence 60%, books/enchants/reforge 50%.", true),
+			new Option("Craft cost cap", () -> onOff(c().craftCap),
+					(cfg, back) -> cfg.craftCap = !cfg.craftCap,
+					"Never value an item above what it costs to craft from its recipe right now.", true),
+			new Option("Exotic pricing", () -> onOff(c().exoticPricing),
+					(cfg, back) -> cfg.exoticPricing = !cfg.exoticPricing,
+					"Price exotic/crystal/fairy/spook dyed armor from 30 days of sales of the same color and type.", true),
 			new Option("Min profit", () -> c().minProfit <= 0 ? "§7off" : Fmt.coins(c().minProfit),
 					(cfg, back) -> cfg.minProfit = cycle(MIN_PROFITS, cfg.minProfit, back),
 					"Never suggest an offer that leaves less than this profit after AH tax.", true),
@@ -123,6 +131,26 @@ public final class Options {
 			new Option("Outside Hypixel", () -> onOff(c().enableEverywhere),
 					(cfg, back) -> cfg.enableEverywhere = !cfg.enableEverywhere,
 					"Run data fetching and tooltips on any server (testing).", false));
+
+	/** Per-category credit options; changing one switches upgrade credit to Custom. */
+	public static final List<Option> CATEGORIES = java.util.Arrays.stream(UpgradeCategory.values()).map(cat -> new Option(
+			cat.label, () -> Math.round(c().credit(cat) * 100) + "%",
+			(cfg, back) -> {
+				if (cfg.upgradeMode != UpgradeMode.CUSTOM) {
+					for (UpgradeCategory k : UpgradeCategory.values()) {
+						cfg.categoryCredit.put(k.name(), Math.rint(cfg.credit(k) * 100));
+					}
+					cfg.upgradeMode = UpgradeMode.CUSTOM;
+				}
+				cfg.categoryCredit.put(cat.name(), cycle(CREDITS, cfg.categoryCredit.getOrDefault(cat.name(), (double) cat.defaultCredit), back));
+			},
+			"Credit for " + cat.label.toLowerCase(java.util.Locale.ROOT) + " (balanced default " + cat.defaultCredit + "%). Sets upgrade credit to Custom.", false)).toList();
+
+	public static List<Option> screenOptions() {
+		List<Option> all = new java.util.ArrayList<>(ALL);
+		all.addAll(CATEGORIES);
+		return all;
+	}
 
 	private static <T> T cycle(T[] values, T current, boolean back) {
 		int i = 0;
