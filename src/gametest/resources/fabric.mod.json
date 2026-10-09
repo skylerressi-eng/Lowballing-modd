@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "lowballhelper-gametest",
+	"version": "1.0.0",
+	"name": "Lowball Helper client game tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"dev.lowball.helper.gametest.TradePanelClientTest"
+		]
+	},
+	"depends": {
+		"lowballhelper": "*"
+	}
+}

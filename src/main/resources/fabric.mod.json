@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "lowballhelper",
+	"version": "${version}",
+	"name": "Lowball Helper",
+	"description": "Hypixel SkyBlock lowballing assistant: live LBIN, sales volume, listings, upgrade value and a suggested offer in a panel next to the trade menu.",
+	"authors": [
+		"skylerressi-eng"
+	],
+	"contact": {
+		"sources": "https://github.com/skylerressi-eng/Lowballing-modd"
+	},
+	"license": "MIT",
+	"icon": "assets/lowballhelper/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.lowball.helper.client.LowballHelperClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "lowballhelper.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.1",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
